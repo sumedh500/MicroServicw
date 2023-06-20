@@ -8,7 +8,6 @@ const Order = require("./models/Order");
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 var channel, connection;
-
 mongoose
   .connect("mongodb://0.0.0.0:27017/scan-order-service", {
     useNewUrlParser: true,
