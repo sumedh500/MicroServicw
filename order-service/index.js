@@ -8,8 +8,9 @@ const Order = require("./models/Order");
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 var channel, connection;
+
 mongoose
-  .connect("mongodb://0.0.0.0:27017/scan-order-service", {
+  .connect("mongodb://0.0.0.0:27017/order-service", {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
@@ -24,26 +25,29 @@ async function connectToRabbitMQ() {
   await channel.assertQueue("order-service-queue");
 }
 
-// Create an order
-createOrder = (products) => {
+createOrder = (products, userEmail) => {
+  console.log(products)
   let total = 0;
   products.forEach((product) => {
     total += product.price;
   });
 
   const order = new Order({
+    user: userEmail,
     products,
     total,
   });
-  order.save();
+  order.save().then(data=>{
+    console.log(data)
+  });
   return order;
 };
 
 connectToRabbitMQ().then(() => {
   channel.consume("order-service-queue", (data) => {
     // order service queue listens to this queue
-    const { products } = JSON.parse(data.content);
-    const newOrder = createOrder(products);
+    const { products, userEmail } = JSON.parse(data.content);
+    const newOrder = createOrder(products, userEmail);
     channel.ack(data);
     channel.sendToQueue(
       "product-service-queue",
